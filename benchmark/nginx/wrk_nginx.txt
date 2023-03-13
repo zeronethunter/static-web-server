@@ -1,0 +1,13 @@
+Running 30s test @ http://127.0.0.1:8080/httptest/wikipedia_russia.html
+  2 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    23.05ms    3.82ms  41.94ms   69.61%
+    Req/Sec   217.69     16.38   270.00     71.50%
+  Latency Distribution
+     50%   22.55ms
+     75%   25.28ms
+     90%   28.27ms
+     99%   33.76ms
+  13008 requests in 30.00s, 11.57GB read
+Requests/sec:    433.54
+Transfer/sec:    394.99MB
