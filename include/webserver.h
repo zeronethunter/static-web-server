@@ -31,9 +31,8 @@ class WebServer {
   };
 
   ~WebServer() {
-    // free resources
-    for (auto* base : _http_event_bases) {
-      event_base_free(base);
+    for (auto worker : _workers) {
+      delete worker;
     }
   };
 
@@ -43,7 +42,7 @@ class WebServer {
   uint16_t _port{DEFAULT_PORT};
   uint16_t _num_threads{DEFAULT_NUM_THREADS};
   std::filesystem::path _document_root{DEFAULT_DOCUMENT_ROOT};
-  std::vector<event_base*> _http_event_bases{};
+  std::vector<Worker*> _workers{};
 
   Logger* _logger;
 };

@@ -14,6 +14,7 @@ void Worker::on_connection(evutil_socket_t fd, short event, void *arg) {
   auto *_logger = &Logger::getInstance();
 
   int client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
+
   if (client_fd == -1) {
     return;
   }
@@ -220,7 +221,7 @@ void Worker::run(std::filesystem::path document_root) {
   /*
    * Run event loop with listener and clients
    * */
-  event_base_loop(_base, EVLOOP_NO_EXIT_ON_EMPTY);
+  event_base_dispatch(_base);
 }
 
 void Worker::send_file(evutil_socket_t client_fd, event_base *base,
@@ -299,6 +300,6 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
 }
 
 void Worker::kill_client(evutil_socket_t client_fd, event_base *base) {
-  event_del(event_base_get_running_event(base));
+  event_del_noblock(event_base_get_running_event(base));
   close(client_fd);
 }

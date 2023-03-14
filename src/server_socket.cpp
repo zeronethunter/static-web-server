@@ -2,8 +2,6 @@
 
 #include "event2/event.h"
 
-#define QUEUE_SOCKET 512
-
 /* Socket initialization
  *
  * Returns 0 if success, 1 on failure
@@ -38,7 +36,7 @@ uint8_t ServerSocket::init() {
     return 1;
   }
 
-  if (listen(_fd, QUEUE_SOCKET) == -1) {
+  if (listen(_fd, SOMAXCONN) == -1) {
     _logger->log("[ERROR] ", "Could not listen on port ", _port, ": ",
                  hstrerror(errno));
     return 1;

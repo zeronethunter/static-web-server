@@ -6,14 +6,19 @@
 #include "include/webserver.h"
 
 void ws_terminate(int sig) {
-  auto* _logger = &Logger::getInstance();
+  auto *_logger = &Logger::getInstance();
   _logger->log("\nWebServer is closed with signal: ", sig);
   exit(0);
 }
 
-int main() {
-  Logger* logger = &Logger::getInstance();
+int main(int argc, char *argv[]) {
+  Logger *logger = &Logger::getInstance();
   signal(SIGINT, ws_terminate);
+
+  uint8_t cpu_count = 0;
+  if (argc == 2) {
+    cpu_count = std::stoi(argv[1]);
+  }
 
   /*
    * You could set output stream to log file
@@ -25,6 +30,9 @@ int main() {
   logger->log("Reading config file...");
 
   Config config("/etc/httpd.conf");
+  if (cpu_count) {
+    config.set_cpu_limit(cpu_count);
+  }
 
   logger->setDebugMode(config.get_debug_mode());
 

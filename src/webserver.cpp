@@ -2,6 +2,7 @@
 
 #include "../include/worker.h"
 #include "event2/event.h"
+#include "event2/thread.h"
 
 void WebServer::run() {
   /*
@@ -16,7 +17,9 @@ void WebServer::run() {
   }
 
   for (uint16_t i = 0; i < _num_threads; ++i) {
-    std::thread t([&socket, this]() { Worker(socket).run(_document_root); });
+    auto worker = new Worker(socket);
+    std::thread t([&worker, this]() { worker->run(_document_root); });
+    _workers.push_back(worker);
 
     t.detach();
   }

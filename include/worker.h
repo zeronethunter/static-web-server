@@ -13,7 +13,7 @@
 
 class Worker {
  public:
-  Worker(ServerSocket& socket) : _socket(socket) {}
+  explicit Worker(ServerSocket& socket) : _socket(socket) {}
 
   ~Worker() {
     auto* _logger = &Logger::getInstance();
