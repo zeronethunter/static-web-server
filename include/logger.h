@@ -1,6 +1,9 @@
 #ifndef STATIC_WEB_SERVER_LOGGER_H
 #define STATIC_WEB_SERVER_LOGGER_H
 
+#include <time.h>
+
+#include <chrono>
 #include <iostream>
 #include <mutex>
 #include <sstream>
@@ -17,9 +20,8 @@ class Logger {
 
   template <typename... Args>
   void log(Args&&... args) {
-    std::lock_guard<std::mutex> lock(m_mutex);
     std::string msg = constructMessage(std::forward<Args>(args)...);
-    msg = "\033[31m[" + HTTPResponse::get_current_time() + "]\033[0m " + msg;
+//    msg = "\033[31m[" + get_current_time() + "]\033[0m " + msg;
     m_outputStream << msg;
   }
 
@@ -34,18 +36,20 @@ class Logger {
   }
 
   void setOutputStream(std::ostream& outputStream) {
-    std::lock_guard<std::mutex> lock(m_mutex);
     m_outputStream.rdbuf(outputStream.rdbuf());
   }
 
   static std::string get_current_time() {
-    std::time_t now = std::time(nullptr);
-    char time_str[50];
+    auto now = std::chrono::system_clock::now();
+    std::time_t t = std::chrono::system_clock::to_time_t(now);
 
-    std::strftime(time_str, sizeof(time_str), "%a, %d %b %Y %T GMT",
-                  std::gmtime(&now));
+    std::tm utc_tm{};
+    gmtime_r(&t, &utc_tm);
 
-    return {time_str};
+    std::ostringstream oss;
+    oss << std::put_time(&utc_tm, "%a, %d %b %Y %T GMT");
+
+    return oss.str();
   }
 
   Logger(const Logger&) = delete;

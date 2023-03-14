@@ -39,10 +39,13 @@ class WebServer {
   void run();
 
  private:
+  static void on_accept(evutil_socket_t fd, short event, void* arg);
+
   uint16_t _port{DEFAULT_PORT};
   uint16_t _num_threads{DEFAULT_NUM_THREADS};
   std::filesystem::path _document_root{DEFAULT_DOCUMENT_ROOT};
-  std::vector<Worker*> _workers{};
+  std::vector<Worker*> _workers;
+  size_t _next_worker = 0;
 
   Logger* _logger;
 };

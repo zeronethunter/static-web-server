@@ -33,4 +33,4 @@ file(GLOB_RECURSE FILES
 
 add_executable(static_web_server main.cpp ${FILES})
 
-target_link_libraries(static_web_server PUBLIC event)
+target_link_libraries(static_web_server PUBLIC event event_pthreads pthread)

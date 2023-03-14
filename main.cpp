@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
    * You could set output stream to log file
    * Debug mode to log requests and specific info, enabled by default
    * */
+  // std::ofstream log_file("../log.txt");
   logger->setOutputStream(std::cout);
 
   logger->log("Starting web server...");

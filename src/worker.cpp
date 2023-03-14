@@ -1,27 +1,32 @@
 #include "../include/worker.h"
 
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include <cstring>
 #include <fstream>
 #include <thread>
 #include <utility>
 
+#include "sys/sendfile.h"
+
 void Worker::on_connection(evutil_socket_t fd, short event, void *arg) {
-  auto *base = (struct event_base *)arg;
-  sockaddr_storage client_addr{};
-  socklen_t client_len = sizeof(client_addr);
+  auto *worker = (Worker *)arg;
   auto *_logger = &Logger::getInstance();
 
-  int client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_len);
-
-  if (client_fd == -1) {
-    return;
-  }
-
-  if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+  /*
+   * Read client fd to handle
+   * */
+  int client_fd;
+  ssize_t readed = read(fd, &client_fd, sizeof(client_fd));
+  if (readed == -1) {
     _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::on_connection: fcntl::F_SETFL failed");
+                 " Worker::on_connection: read failed: ", hstrerror(errno));
+    close(client_fd);
+    return;
+  } else if (readed == 0) {
+    _logger->log("[DEBUG] ", std::this_thread::get_id(),
+                 " Worker::on_connection: read empty: ", hstrerror(errno));
     close(client_fd);
     return;
   }
@@ -29,8 +34,8 @@ void Worker::on_connection(evutil_socket_t fd, short event, void *arg) {
   /*
    * Creating of new client event, which will be added to event_base.
    * */
-  struct event *client_event =
-      event_new(base, client_fd, EV_READ, on_request, (void *)base);
+  struct event *client_event = event_new(worker->get_base(), client_fd, EV_READ,
+                                         on_request, (void *)worker);
 
   if (!client_event) {
     _logger->log("[ERROR] ", std::this_thread::get_id(),
@@ -48,7 +53,7 @@ void Worker::on_connection(evutil_socket_t fd, short event, void *arg) {
 }
 
 void Worker::on_request(evutil_socket_t fd, short ev, void *arg) {
-  auto *base = (struct event_base *)arg;
+  auto *worker = (Worker *)arg;
   char buffer[1024];
   ssize_t n = recv(fd, buffer, sizeof(buffer), 0);
   auto *_logger = &Logger::getInstance();
@@ -61,16 +66,18 @@ void Worker::on_request(evutil_socket_t fd, short ev, void *arg) {
     /* When there is no data to read, remove the event from the
      * event_loop and close socket.
      * */
-    kill_client(fd, base);
+    kill_client(fd, worker->get_base());
   } else {
-    handle_request(fd, base, buffer, n);
+    handle_request(worker->get_document_root(), fd, worker->get_base(), buffer,
+                   n);
   }
 }
 
-void Worker::handle_request(evutil_socket_t fd, event_base *base, char *request,
+void Worker::handle_request(std::filesystem::path document_root,
+                            evutil_socket_t fd, event_base *base, char *request,
                             size_t length) {
   auto *_logger = &Logger::getInstance();
-  std::filesystem::path root(_document_root);
+  std::filesystem::path root(std::move(document_root));
   bool is_index = false;
   enum request_type { GET = 0, HEAD = 1 };
 
@@ -83,13 +90,13 @@ void Worker::handle_request(evutil_socket_t fd, event_base *base, char *request,
                  std::string(request, length));
   }
 
+  HTTPResponse response;
+
   std::unordered_map<std::string, std::string> headers{
       {"Connection", "close"},
       {"Date", HTTPResponse::get_current_time()},
       {"Server", "zenehu"},
   };
-
-  HTTPResponse response;
 
   /*
    * Check only GET and HEAD requests
@@ -197,20 +204,21 @@ void Worker::run(std::filesystem::path document_root) {
     exit(1);
   }
 
-  /*
-   * Creating socket-listener event in worker (EV_PERSIST required)
-   * */
-  _listener = event_new(_base, _socket.getFD(), EV_READ | EV_PERSIST,
-                        on_connection, _base);
+  _listener = event_new(_base, _listener_pipe_fd, EV_READ | EV_PERSIST,
+                        on_connection, (void *)this);
+
   if (!_listener) {
     _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::run: event_new failed");
+                 " Worker::run: new_event failed");
+    close(_listener_pipe_fd);
     exit(1);
   }
 
   if (event_add(_listener, nullptr) == -1) {
     _logger->log("[ERROR] ", std::this_thread::get_id(),
                  " Worker::run: event_add failed");
+    event_free(_listener);
+    close(_listener_pipe_fd);
     exit(1);
   }
 
@@ -218,6 +226,7 @@ void Worker::run(std::filesystem::path document_root) {
     _logger->log("[DEBUG] ", std::this_thread::get_id(),
                  " Worker::run: started");
   }
+
   /*
    * Run event loop with listener and clients
    * */
@@ -231,7 +240,7 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
   std::ifstream file(file_path, std::ios::binary | std::ios::ate);
   if (!file) {
     _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::send_file: file open failed: " + file_path.string());
+                 " Worker::send_file: file open failed: ", hstrerror(errno));
     kill_client(client_fd, base);
     return;
   }
@@ -263,11 +272,10 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
     /*
      * Reading a chunk from file
      * */
-    file.readsome(buffer, chunk_size);
+    file.read(buffer, chunk_size);
     if (!file) {
-      _logger->log(
-          "[ERROR] ", std::this_thread::get_id(),
-          " Worker::send_file: file read failed: " + file_path.string());
+      _logger->log("[ERROR] ", std::this_thread::get_id(),
+                   " Worker::send_file: file read failed: ", hstrerror(errno));
       kill_client(client_fd, base);
       return;
     }
@@ -284,7 +292,7 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
         continue;
       }
       _logger->log("[ERROR] ", std::this_thread::get_id(),
-                   " Worker::send_file: send failed: " + file_path.string());
+                   " Worker::send_file: send failed: ", hstrerror(errno));
       kill_client(client_fd, base);
       return;
     }

@@ -2,7 +2,7 @@
 
 #include <ctime>
 #include <iostream>
-#include <sstream>
+#include <mutex>
 #include <unordered_map>
 
 std::unordered_map<std::string, std::string> content_type_table{
@@ -45,13 +45,16 @@ std::string HTTPResponse::convert_to_message(int status) {
 }
 
 std::string HTTPResponse::get_current_time() {
-  std::time_t now = std::time(nullptr);
-  char time_str[50];
+  auto now = std::chrono::system_clock::now();
+  std::time_t t = std::chrono::system_clock::to_time_t(now);
 
-  std::strftime(time_str, sizeof(time_str), "%a, %d %b %Y %T GMT",
-                std::gmtime(&now));
+  std::tm utc_tm{};
+  gmtime_r(&t, &utc_tm);
 
-  return {time_str};
+  std::ostringstream oss;
+  oss << std::put_time(&utc_tm, "%a, %d %b %Y %T GMT");
+
+  return oss.str();
 }
 
 std::string HTTPResponse::build(uint8_t request_type) const {

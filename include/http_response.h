@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <unordered_map>

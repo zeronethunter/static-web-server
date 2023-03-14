@@ -1,0 +1,42 @@
+This is ApacheBench, Version 2.3 <$Revision: 1879490 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 127.0.0.1 (be patient)
+
+
+Server Software:        nginx/1.23.3
+Server Hostname:        127.0.0.1
+Server Port:            8080
+
+Document Path:          /httptest/wikipedia_russia.html
+Document Length:        960201 bytes
+
+Concurrency Level:      250
+Time taken for tests:   42.014 seconds
+Complete requests:      20000
+Failed requests:        0
+Total transferred:      19208780000 bytes
+HTML transferred:       19204020000 bytes
+Requests per second:    476.03 [#/sec] (mean)
+Time per request:       525.179 [ms] (mean)
+Time per request:       2.101 [ms] (mean, across all concurrent requests)
+Transfer rate:          446480.30 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    2   3.2      0      24
+Processing:    29  522  85.5    524     936
+Waiting:        3   93  53.3     81     500
+Total:         29  524  84.9    525     938
+
+Percentage of the requests served within a certain time (ms)
+  50%    525
+  66%    549
+  75%    566
+  80%    578
+  90%    612
+  95%    651
+  98%    719
+  99%    760
+ 100%    938 (longest request)
