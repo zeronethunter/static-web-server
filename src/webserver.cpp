@@ -10,7 +10,7 @@
 
 void WebServer::run() {
   if (evthread_use_pthreads() == -1) {
-    _logger->log("[ERROR] ", "Couldn't initialize libevent threading\n");
+    _logger->error("Couldn't initialize libevent threading\n");
     exit(1);
   }
 
@@ -20,8 +20,7 @@ void WebServer::run() {
   auto socket = ServerSocket(_port);
 
   if (socket.init() == 1) {
-    _logger->log("[ERROR] ",
-                 "Could not initialize listener socket\n Terminating...");
+    _logger->error("Could not initialize listener socket\n Terminating...");
     exit(1);
   }
 
@@ -30,9 +29,8 @@ void WebServer::run() {
    * */
   auto listener_base = event_base_new();
   if (!listener_base) {
-    _logger->log("[ERROR] ",
-                 "Couldn't initialize listener event base: ", hstrerror(errno),
-                 "\n");
+    _logger->error(
+        "Couldn't initialize listener event base: ", hstrerror(errno), "\n");
     exit(1);
   }
 
@@ -42,23 +40,21 @@ void WebServer::run() {
   auto listener = event_new(listener_base, socket.getFD(), EV_READ | EV_PERSIST,
                             on_accept, (void *)this);
   if (!listener) {
-    _logger->log("[ERROR] ",
-                 "Couldn't initialize listener event: ", hstrerror(errno),
-                 "\n");
+    _logger->error("Couldn't initialize listener event: ", hstrerror(errno),
+                   "\n");
     exit(1);
   }
 
   if (event_add(listener, nullptr) == -1) {
-    _logger->log("[ERROR] ", "Couldn't add listener event: ", hstrerror(errno),
-                 "\n");
+    _logger->error("Couldn't add listener event: ", hstrerror(errno), "\n");
     exit(1);
   }
 
   for (uint16_t i = 0; i < _num_threads; ++i) {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1) {
-      _logger->log("[ERROR] ",
-                   "Couldn't create pipe for worker: ", hstrerror(errno), "\n");
+      _logger->error("Couldn't create pipe for worker: ", hstrerror(errno),
+                     "\n");
       exit(1);
     }
 
@@ -93,7 +89,7 @@ void WebServer::on_accept(evutil_socket_t listener_socket, short event,
   }
 
   if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
-    _logger->log("[ERROR] ", " run::on_accept: fcntl::F_SETFL failed");
+    _logger->error("run::on_accept: fcntl::F_SETFL failed");
     close(client_fd);
     return;
   }
@@ -106,8 +102,7 @@ void WebServer::on_accept(evutil_socket_t listener_socket, short event,
 
   ssize_t n = write(worker_sender_fd, &client_fd, sizeof(client_fd));
   if (n < 0) {
-    _logger->log("[ERROR] ",
-                 " run::on_accept: write failed: ", hstrerror(errno));
+    _logger->error("run::on_accept: write failed: ", hstrerror(errno));
     close(client_fd);
     return;
   }

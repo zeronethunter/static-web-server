@@ -21,7 +21,26 @@ class Logger {
   template <typename... Args>
   void log(Args&&... args) {
     std::string msg = constructMessage(std::forward<Args>(args)...);
-//    msg = "\033[31m[" + get_current_time() + "]\033[0m " + msg;
+    m_outputStream << msg;
+  }
+
+  template <typename... Args>
+  void debug(Args&&... args) {
+    std::string msg =
+        "[DEBUG] " + constructMessage(std::forward<Args>(args)...);
+    m_outputStream << msg;
+  }
+
+  template <typename... Args>
+  void info(Args&&... args) {
+    std::string msg = "[INFO] " + constructMessage(std::forward<Args>(args)...);
+    m_outputStream << msg;
+  }
+
+  template <typename... Args>
+  void error(Args&&... args) {
+    std::string msg =
+        "[ERROR] " + constructMessage(std::forward<Args>(args)...);
     m_outputStream << msg;
   }
 

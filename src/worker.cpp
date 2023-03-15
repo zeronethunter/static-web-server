@@ -20,13 +20,13 @@ void Worker::on_connection(evutil_socket_t fd, short event, void *arg) {
   int client_fd;
   ssize_t readed = read(fd, &client_fd, sizeof(client_fd));
   if (readed == -1) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::on_connection: read failed: ", hstrerror(errno));
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::on_connection: read failed: ", hstrerror(errno));
     close(client_fd);
     return;
   } else if (readed == 0) {
-    _logger->log("[DEBUG] ", std::this_thread::get_id(),
-                 " Worker::on_connection: read empty: ", hstrerror(errno));
+    _logger->debug(std::this_thread::get_id(),
+                   " Worker::on_connection: read empty: ", hstrerror(errno));
     close(client_fd);
     return;
   }
@@ -38,14 +38,14 @@ void Worker::on_connection(evutil_socket_t fd, short event, void *arg) {
                                          on_request, (void *)worker);
 
   if (!client_event) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::on_connection: new_event failed");
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::on_connection: new_event failed");
     close(client_fd);
     return;
   }
   if (event_add(client_event, nullptr) == -1) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::on_connection: event_add failed");
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::on_connection: event_add failed");
     event_free(client_event);
     close(client_fd);
     return;
@@ -59,8 +59,7 @@ void Worker::on_request(evutil_socket_t fd, short ev, void *arg) {
   auto *_logger = &Logger::getInstance();
 
   if (n == -1) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::or_read: recv failed");
+    _logger->error(std::this_thread::get_id(), " Worker::or_read: recv failed");
     return;
   } else if (n == 0) {
     /* When there is no data to read, remove the event from the
@@ -85,9 +84,9 @@ void Worker::handle_request(std::filesystem::path document_root,
    * Logging request only if debug mode is enabled
    * */
   if (_logger->getDebugMode()) {
-    _logger->log("\n\033[32m", std::this_thread::get_id(),
-                 " Worker::handle_request:\n", "\033[0m",
-                 std::string(request, length));
+    _logger->debug("\n\033[32m", std::this_thread::get_id(),
+                   " Worker::handle_request:\n", "\033[0m",
+                   std::string(request, length));
   }
 
   HTTPResponse response;
@@ -198,9 +197,9 @@ void Worker::run(std::filesystem::path document_root) {
    * */
   _base = event_base_new();
   if (!_base) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::run: could not initialize event_base: ",
-                 hstrerror(errno), "\n");
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::run: could not initialize event_base: ",
+                   hstrerror(errno), "\n");
     exit(1);
   }
 
@@ -208,23 +207,22 @@ void Worker::run(std::filesystem::path document_root) {
                         on_connection, (void *)this);
 
   if (!_listener) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::run: new_event failed");
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::run: new_event failed");
     close(_listener_pipe_fd);
     exit(1);
   }
 
   if (event_add(_listener, nullptr) == -1) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::run: event_add failed");
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::run: event_add failed");
     event_free(_listener);
     close(_listener_pipe_fd);
     exit(1);
   }
 
   if (_logger->getDebugMode()) {
-    _logger->log("[DEBUG] ", std::this_thread::get_id(),
-                 " Worker::run: started");
+    _logger->debug(std::this_thread::get_id(), " Worker::run: started");
   }
 
   /*
@@ -239,8 +237,8 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
   auto *_logger = &Logger::getInstance();
   std::ifstream file(file_path, std::ios::binary | std::ios::ate);
   if (!file) {
-    _logger->log("[ERROR] ", std::this_thread::get_id(),
-                 " Worker::send_file: file open failed: ", hstrerror(errno));
+    _logger->error(std::this_thread::get_id(),
+                   " Worker::send_file: file open failed: ", hstrerror(errno));
     kill_client(client_fd, base);
     return;
   }
@@ -274,8 +272,9 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
      * */
     file.read(buffer, chunk_size);
     if (!file) {
-      _logger->log("[ERROR] ", std::this_thread::get_id(),
-                   " Worker::send_file: file read failed: ", hstrerror(errno));
+      _logger->error(
+          std::this_thread::get_id(),
+          " Worker::send_file: file read failed: ", hstrerror(errno));
       kill_client(client_fd, base);
       return;
     }
@@ -291,8 +290,8 @@ void Worker::send_file(evutil_socket_t client_fd, event_base *base,
          * */
         continue;
       }
-      _logger->log("[ERROR] ", std::this_thread::get_id(),
-                   " Worker::send_file: send failed: ", hstrerror(errno));
+      _logger->error(std::this_thread::get_id(),
+                     " Worker::send_file: send failed: ", hstrerror(errno));
       kill_client(client_fd, base);
       return;
     }

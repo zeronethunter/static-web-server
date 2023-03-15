@@ -95,4 +95,3 @@ Let's take the best RPS's of both:
 5. After execution, the request is sent back to the client socket.
 
 ![](assets/diagram.png)
-

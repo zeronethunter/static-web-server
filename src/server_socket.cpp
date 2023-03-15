@@ -9,19 +9,17 @@
 uint8_t ServerSocket::init() {
   _fd = socket(AF_INET, SOCK_STREAM, 0);
   if (_fd == -1) {
-    _logger->log("[ERROR] ", "Could not create socket: ", hstrerror(errno));
+    _logger->error("Could not create socket: ", hstrerror(errno));
     return 1;
   }
 
   if (evutil_make_listen_socket_reuseable(_fd) == -1) {
-    _logger->log("[ERROR] ",
-                 "Could not make socket reusable: ", hstrerror(errno));
+    _logger->error("Could not make socket reusable: ", hstrerror(errno));
     return 1;
   }
 
   if (evutil_make_socket_nonblocking(_fd) == -1) {
-    _logger->log("[ERROR] ",
-                 "Could not make socket nonblocking: ", hstrerror(errno));
+    _logger->error("Could not make socket nonblocking: ", hstrerror(errno));
     return 1;
   }
 
@@ -31,14 +29,12 @@ uint8_t ServerSocket::init() {
 
   if (bind(_fd, reinterpret_cast<struct sockaddr *>(&_addr), sizeof(_addr)) ==
       -1) {
-    _logger->log("[ERROR] ", "Could not bind to port ", _port, ": ",
-                 hstrerror(errno));
+    _logger->error("Could not bind to port ", _port, ": ", hstrerror(errno));
     return 1;
   }
 
   if (listen(_fd, SOMAXCONN) == -1) {
-    _logger->log("[ERROR] ", "Could not listen on port ", _port, ": ",
-                 hstrerror(errno));
+    _logger->error("Could not listen on port ", _port, ": ", hstrerror(errno));
     return 1;
   }
 

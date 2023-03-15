@@ -37,15 +37,14 @@ void Config::init() {
         } else if (line.find("false") != std::string::npos) {
           _debug_mode = false;
         } else {
-          _logger->log("[ERROR] ", "Invalid debug mode value: ", line,
-                       ", using default");
+          _logger->error("Invalid debug mode value: ", line, ", using default");
         }
       }
     }
   } catch (std::exception &e) {
-    _logger->log("[ERROR] ", "Error while parsing config file: ", e.what());
+    _logger->error("Error while parsing config file: ", e.what());
     return;
   }
 
-  _logger->log("Config file successfully parsed");
+  _logger->info("Config file successfully parsed");
 }
