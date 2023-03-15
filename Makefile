@@ -39,19 +39,19 @@ func_test: submodule ## Functional testing
 
 .PHONY: perf_test_server_ab
 perf_test_server_ab: submodule ## Run ab performance test for server
-	ab -n 20000 -c 250 127.0.0.1:80/http-test-suite/httptest/wikipedia_russia.html > benchmark/server/ab_benchmark.txt
+	ab -n 20000 -c 500 127.0.0.1:80/httptest/wikipedia_russia.html > benchmark/server/ab_benchmark.txt
 
 .PHONY: perf_test_server_wrk
 perf_test_server_wrk: submodule ## Run wrk performance test for server
-	wrk --latency -d30s http://127.0.0.1:80/http-test-suite/httptest/wikipedia_russia.html >benchmark/server/wrk_benchmark.txt
+	wrk --latency -d30s http://127.0.0.1:80/httptest/wikipedia_russia.html >benchmark/server/wrk_benchmark.txt
 
 .PHONY: perf_test_nginx_ab
 perf_test_nginx_ab: submodule ## Run ab performance test for nginx
-	ab -n 20000 -c 250 127.0.0.1:8080/http-test-suite/httptest/wikipedia_russia.html >benchmark/nginx/ab_nginx.txt
+	ab -n 20000 -c 250 127.0.0.1:8080/httptest/wikipedia_russia.html >benchmark/nginx/ab_nginx.txt
 
 .PHONY: perf_test_nginx_wrk
 perf_test_nginx_wrk: submodule ## Run wrk performance test for nginx
-	wrk --latency -d30s http://127.0.0.1:8080/http-test-suite/httptest/wikipedia_russia.html >benchmark/nginx/wrk_nginx.txt
+	wrk --latency -d30s http://127.0.0.1:8080/httptest/wikipedia_russia.html >benchmark/nginx/wrk_nginx.txt
 
 .PHONY: benchmark_server
 benchmark_server: perf_test_server_ab perf_test_server_wrk ## Reload benchmark for server
