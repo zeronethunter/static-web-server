@@ -1,3 +1,7 @@
+.PHONY: submodule
+submodule: ## Initialize, fetch and checkout submodule
+	git submodule update --init --recursive
+
 .PHONY: build
 build: ## Build server
 	mkdir build
@@ -18,32 +22,36 @@ docker_build_server: clear ## Docker build server
 	docker build -f Dockerfile -t server:latest .
 
 .PHONY: docker_start_server
-docker_start_server: clear docker_build_server ## Run server container
-	docker run --rm -p 80:80 -v $(pwd)/benchmark/server/config.conf:/etc/httpd.conf -v $(pwd)/httptest:/var/www/html/httptest --name server -t server
+docker_start_server: clear docker_build_server submodule ## Run server container
+	docker run --rm -p 80:80 -v $(pwd)/benchmark/server/config.conf:/etc/httpd.conf -v $(pwd)/http-test-suite/httptest:/var/www/html/httptest --name server -t server
 
 .PHONY: docker_start_nginx
-docker_start_nginx: ## Run nginx container
-	docker run --rm -p 8080:8080 -v $(pwd)/benchmark/nginx/nginx.conf:/etc/nginx/nginx.conf -v $(pwd)/httptest:/var/www/html/httptest --name nginx-test -t nginx
+docker_start_nginx: submodule ## Run nginx container
+	docker run --rm -p 8080:8080 -v $(pwd)/benchmark/nginx/nginx.conf:/etc/nginx/nginx.conf -v $(pwd)/http-test-suite/httptest:/var/www/html/httptest --name nginx-test -t nginx
 
 .PHONY: docker_run_it_server
 docker_run_it_server: clear docker_build_server ## Docker run server in interactive mode
 	docker run -it --rm server /bin/bash
 
+.PHONY: func_test
+func_test: submodule ## Functional testing
+	./http-test-suite/httptest.py
+
 .PHONY: perf_test_server_ab
-perf_test_server_ab: ## Run ab performance test for server
-	ab -n 20000 -c 250 127.0.0.1:80/httptest/wikipedia_russia.html > benchmark/server/ab_benchmark.txt
+perf_test_server_ab: submodule ## Run ab performance test for server
+	ab -n 20000 -c 250 127.0.0.1:80/http-test-suite/httptest/wikipedia_russia.html > benchmark/server/ab_benchmark.txt
 
 .PHONY: perf_test_server_wrk
-perf_test_server_wrk: ## Run wrk performance test for server
-	wrk --latency -d30s http://127.0.0.1:80/httptest/wikipedia_russia.html >benchmark/server/wrk_benchmark.txt
+perf_test_server_wrk: submodule ## Run wrk performance test for server
+	wrk --latency -d30s http://127.0.0.1:80/http-test-suite/httptest/wikipedia_russia.html >benchmark/server/wrk_benchmark.txt
 
 .PHONY: perf_test_nginx_ab
-perf_test_nginx_ab: ## Run ab performance test for nginx
-	ab -n 20000 -c 250 127.0.0.1:8080/httptest/wikipedia_russia.html >benchmark/nginx/ab_nginx.txt
+perf_test_nginx_ab: submodule ## Run ab performance test for nginx
+	ab -n 20000 -c 250 127.0.0.1:8080/http-test-suite/httptest/wikipedia_russia.html >benchmark/nginx/ab_nginx.txt
 
 .PHONY: perf_test_nginx_wrk
-perf_test_nginx_wrk: ## Run wrk performance test for nginx
-	wrk --latency -d30s http://127.0.0.1:8080/httptest/wikipedia_russia.html >benchmark/nginx/wrk_nginx.txt
+perf_test_nginx_wrk: submodule ## Run wrk performance test for nginx
+	wrk --latency -d30s http://127.0.0.1:8080/http-test-suite/httptest/wikipedia_russia.html >benchmark/nginx/wrk_nginx.txt
 
 .PHONY: benchmark_server
 benchmark_server: perf_test_server_ab perf_test_server_wrk ## Reload benchmark for server

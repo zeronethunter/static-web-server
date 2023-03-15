@@ -13,20 +13,23 @@
 Commands:
 
 ```shell
-make build                          # Build server
-make run                            # Run server
-make clear                          # Clear build directory
-make docker_build_server            # Docker build server
-make docker_start_server            # Run server container
-make docker_start_nginx             # Run nginx container
-make docker_run_it_server           # Docker run server in interactive mode
-make perf_test_server_ab            # Run ab performance test for server
-make perf_test_server_wrk           # Run wrk performance test for server
-make perf_test_nginx_ab             # Run ab performance test for nginx
-make perf_test_nginx_wrk            # Run wrk performance test for nginx
-make benchmark_server               # Reload benchmark for server
-make benchmark_nginx                # Reload benchmark for nginx
-make help                           # Get commands help
+make submodule            # Initialize, fetch and checkout submodule
+make build                # Build server
+make run                  # Run server
+make clear                # Clear build directory
+make docker_build_server  # Docker build server
+make docker_start_server  # Run server container
+make docker_start_nginx   # Run nginx container
+make docker_run_it_server # Docker run server in interactive mode
+make func_test            # Functional testing
+make perf_test_server_ab  # Run ab performance test for server
+make perf_test_server_wrk # Run wrk performance test for server
+make perf_test_nginx_ab   # Run ab performance test for nginx
+make perf_test_nginx_wrk  # Run wrk performance test for nginx
+make benchmark_server     # Reload benchmark for server
+make benchmark_nginx      # Reload benchmark for nginx
+make help                 # Get commands help
+
 ```
 
 ### Config
@@ -34,7 +37,7 @@ make help                           # Get commands help
 - **Default path:** `/etc/httpd.conf`
 - **Configs for benchmarks:** `benchmarks/{server,nginx}/*.conf`
 
-```c++
+```
 cpu_limit 8 # maximum CPU count to use (for non-blocking servers)
 document_root /var/www/html
 port 80 # port to listen on
@@ -65,8 +68,9 @@ Here are the results of load testing against nginx:
 **Commands:**
 
 ```shell
-ab -n 20000 -c 250 127.0.0.1:{port}/httptest/wikipedia_russia.html
-wrk --latency -d30s http://127.0.0.1:{port}/httptest/wikipedia_russia.html
+ab -n 20000 -c 250 127.0.0.1:{port}/{path}
+wrk --latency -d30s http://127.0.0.1:{port}/{path}
+
 ```
 
 | Count workers | Nginx RPS | **Server RPS** |
